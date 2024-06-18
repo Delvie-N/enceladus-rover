@@ -52,12 +52,13 @@ class EnceladusEnvironment(gym.Env):
 		self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
 
 		self.cmap = colors.ListedColormap(['lightskyblue', 'red', 'lightgrey', 'black'])
-		plt.figure(figsize=(6, 6))
-		plt.imshow(self.surface_grid.transpose(), cmap=self.cmap)
-		plt.scatter(self.start_x, self.start_y, color='springgreen', label='Start', marker='s')
-		plt.scatter(self.end_x, self.end_y, color='red', label='End', marker='s')
-		plt.legend()
-		plt.show()
+		# plt.figure(figsize=(6, 6))
+		# plt.title('Exploring Enceladus')
+		# plt.imshow(self.surface_grid.transpose(), cmap=self.cmap)
+		# plt.scatter(self.start_x, self.start_y, color='springgreen', label='Start', marker='s')
+		# plt.scatter(self.end_x, self.end_y, color='red', label='End', marker='s')
+		# plt.legend()
+		# plt.show()
 	
 	def step(self, action):
 		done = False
@@ -100,18 +101,25 @@ class EnceladusEnvironment(gym.Env):
 		else:
 			done = True
 
-		plt.figure(figsize=(6, 6))
-		plt.imshow(self.surface_grid.transpose(), cmap=self.cmap)
-		plt.scatter(self.start_x, self.start_y, color='springgreen', label='Start', marker='s')
-		plt.scatter(self.end_x, self.end_y, color='red', label='End', marker='s')
-		plt.legend()
-		plt.show()
+		# plt.figure(figsize=(6, 6))
+		# plt.title('Exploring Enceladus')
+		# plt.imshow(self.surface_grid.transpose(), cmap=self.cmap)
+		# plt.scatter(self.start_x, self.start_y, color='springgreen', label='Start', marker='s')
+		# plt.scatter(self.end_x, self.end_y, color='red', label='End', marker='s')
+		# plt.legend()
+		# plt.show()
 
 		observations = self.get_observations()
 
 		return observations, self.reward, done, {}, {}
-
+	
 if __name__ == "__main__":
 	enceladus_environment = EnceladusEnvironment()
 	print(enceladus_environment.step(4)[1])
 	print(enceladus_environment.step(5)[1])
+	print(enceladus_environment.step(3)[1])
+	print(enceladus_environment.step(3)[1])
+	print(enceladus_environment.step(3)[1])
+	print(enceladus_environment.step(4)[1])
+	print(enceladus_environment.step(2)[1])
+	print(enceladus_environment.step(3)[1])
