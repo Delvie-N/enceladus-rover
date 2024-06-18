@@ -96,6 +96,7 @@ class EnceladusEnvironment(gym.Env):
 			self.reward = self.reward_x + self.reward_y
 
 			if self.rover_x == self.end_x and self.rover_y == self.end_y:
+				self.reward = 1000
 				done = True
 
 		else:
