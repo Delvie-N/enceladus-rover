@@ -114,6 +114,20 @@ class EnceladusEnvironment(gym.Env):
 
 		return observations, self.reward, done, {}, {}
 	
+	def reset(self, seed=None, options = None):
+		if seed:
+			np.random.seed(seed)
+		self.surface_grid = np.zeros((self.grid_width, self.grid_height))
+		
+		self.start_x = self.fixed_point_distance
+		self.start_y = self.grid_height-self.fixed_point_distance
+		self.rover_x = self.start_x
+		self.rover_y = self.start_y
+
+		self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
+		self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
+		return self.get_observations(), {}
+	
 if __name__ == "__main__":
 	enceladus_environment = EnceladusEnvironment()
 	print(enceladus_environment.step(4)[1])
