@@ -20,8 +20,8 @@ class EnceladusNetwork(nn.Module):
     def __init__(self, observation_space_dimensions, action_space_dimensions) -> None:
         super().__init__()
 
-        hidden_layer1 = 8
-        hidden_layer2 = 8
+        hidden_layer1 = 20
+        hidden_layer2 = 10
 
         self.shared_network = nn.Sequential(
             nn.Linear(observation_space_dimensions, hidden_layer1),
@@ -52,9 +52,9 @@ class RoverTraining():
     """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
-        self.learning_rate = 1e-4
+        self.learning_rate = 0.001
         self.gamma = 0.99
-        self.eps = 1e-6
+        self.epsilon = 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -66,7 +66,7 @@ class RoverTraining():
         state = torch.tensor(np.array([state]))
         action_means, action_std = self.network(state)
 
-        distribution = Normal(action_means[0] + self.eps, action_std[0] + self.eps)
+        distribution = Normal(action_means[0] + self.epsilon, action_std[0] + self.epsilon)
         action = distribution.sample()
         probability = distribution.log_prob(action)
 
@@ -119,7 +119,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in np.random.randint(0, 500, size=total_seed_amount, dtype=int):
+for seed in [100]:#np.random.randint(0, 500, size=total_seed_amount, dtype=int):
     seed = int(seed)
     seed_number += 1
 
@@ -166,7 +166,17 @@ sns.set(style='darkgrid', context='talk', palette='rainbow')
 sns.scatterplot(x='episodes', y='reward', data=df1).set(
     title='RoverTraining for EnceladusNetwork')
 
-plt.savefig('result_sigmoid_8_8.png')
+result_file_path = 'training_results/result_sigmoid_20_10.png'
+result_file_version = 1
+
+while os.path.isfile(result_file_path) is True:
+    if result_file_version == 1:
+        result_file_path = result_file_path.split('.')[0] + f'-{result_file_version}.png'
+    else:
+        result_file_path = result_file_path.replace(f'-{result_file_version-1}.png', f'-{result_file_version}.png')
+    result_file_version += 1
+
+plt.savefig(result_file_path)
 plt.show()
 env = EnceladusEnvironment()
 

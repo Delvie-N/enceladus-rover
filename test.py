@@ -14,10 +14,10 @@ def test_manual():
 
     n_steps = 40
     for step in range(n_steps):
-        print('Step:', step+1)
+        #print('Step:', step+1)
         observations, reward, done, _, _ = env.step(np.random.randint(0,7))
-        print('Reward:', reward)
-        print('Done?:', done, '\n')
+        #print('Reward:', reward)
+        #print('Done?:', done, '\n')
 
         new_frame = [axes.imshow(env.surface_grid.transpose(), cmap=env.cmap),
                     axes.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s'),
