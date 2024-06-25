@@ -25,9 +25,9 @@ class EnceladusNetwork(nn.Module):
 
         self.shared_network = nn.Sequential(
             nn.Linear(observation_space_dimensions, hidden_layer1),
-            nn.Sigmoid(),
+            nn.Tanh(),
             nn.Linear(hidden_layer1, hidden_layer2),
-            nn.Sigmoid(),
+            nn.Tanh(),
         )
 
         self.policy_mean_network = nn.Sequential(
@@ -54,7 +54,7 @@ class RoverTraining():
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 0.001
         self.gamma = 0.99
-        self.epsilon = 1e-6
+        self.epsilon = 1e-2 #1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -67,12 +67,18 @@ class RoverTraining():
         action_means, action_std = self.network(state)
 
         distribution = Normal(action_means[0] + self.epsilon, action_std[0] + self.epsilon)
-        action = distribution.sample()
-        probability = distribution.log_prob(action)
+        action_tensor = distribution.sample()
 
-        action = action.numpy()
+        probability = distribution.log_prob(action_tensor)
+
+        action_array = action_tensor.numpy()
 
         self.probabilities.append(probability)
+         
+        action = np.where(action_array==max(action_array))[0][0]
+
+        if (random.random() < self.epsilon):                        
+            action = np.random.randint(0,7)
 
         return action
     
@@ -101,7 +107,7 @@ class RoverTraining():
 env = EnceladusEnvironment()
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(1000)
+total_episode_amount = int(5000)
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -119,7 +125,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in [100]:#np.random.randint(0, 500, size=total_seed_amount, dtype=int):
+for seed in [450]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int):
     seed = int(seed)
     seed_number += 1
 
@@ -135,9 +141,7 @@ for seed in [100]:#np.random.randint(0, 500, size=total_seed_amount, dtype=int):
         while not done:
             state = [observations['position_x'], observations['position_y']]
             state.extend(list(np.ndarray.flatten(observations['world'])))
-            action_array = agent.sample_action(state)
-            
-            action = np.where(action_array==max(action_array))[0][0]
+            action = agent.sample_action(state)
 
             observations, reward, terminated, truncated, info = wrapped_env.step(action)
             agent.rewards.append(reward)
@@ -160,13 +164,32 @@ iteration = []
 for rewards in rewards_over_seeds:
     for reward in rewards:
         rewards_to_plot.append(reward[0])
+
+running_mean_size = 30
+half_running_mean_size = int(running_mean_size/2)
+min_running_mean_index = half_running_mean_size
+max_running_mean_index = len(rewards_to_plot) - (half_running_mean_size)
+
+running_means_to_plot = []
+running_means_index_to_plot = list(np.arange(min_running_mean_index, max_running_mean_index, 1))
+
+for running_mean_index in range(min_running_mean_index, max_running_mean_index):
+    running_mean_sum = 0
+    for i in range(running_mean_index-(half_running_mean_size), running_mean_index+(half_running_mean_size)):
+        running_mean_sum += rewards_to_plot[i]
+
+    running_mean = running_mean_sum/(running_mean_size+1)
+    running_means_to_plot.append(running_mean)
+
 df1 = pd.DataFrame([rewards_to_plot]).melt()
+#df2 = pd.DataFrame([running_means_to_plot]).melt()
 df1.rename(columns={'variable': 'episodes', 'value': 'reward'}, inplace=True)
 sns.set(style='darkgrid', context='talk', palette='rainbow')
 sns.scatterplot(x='episodes', y='reward', data=df1).set(
     title='RoverTraining for EnceladusNetwork')
+plt.plot(running_means_index_to_plot, running_means_to_plot, color='red')
 
-result_file_path = 'training_results/result_sigmoid_20_10.png'
+result_file_path = 'training_results/result_tanh_20_10.png'
 result_file_version = 1
 
 while os.path.isfile(result_file_path) is True:
@@ -178,8 +201,9 @@ while os.path.isfile(result_file_path) is True:
 
 plt.savefig(result_file_path)
 plt.show()
-env = EnceladusEnvironment()
 
+#env = EnceladusEnvironment()
+env.reset(seed=seed)
 figure, axes = plt.subplots(figsize=(6, 6))
 
 frames = []
@@ -187,12 +211,12 @@ fps = 10
 
 n_steps = 400
 observations = env.get_observations()
+agent.epsilon = 0
 
 for step in range(n_steps):
     state = [observations['position_x'], observations['position_y']]
     state.extend(list(np.ndarray.flatten(observations['world'])))
-    action_array = agent.sample_action(state)     
-    action = np.where(action_array==max(action_array))[0][0]
+    action = agent.sample_action(state)     
 
     print('Step:', step+1)
     observations, reward, done, _, _ = env.step(action)
@@ -204,9 +228,7 @@ for step in range(n_steps):
                 axes.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')]
         
     frames.append(new_frame)
-
     if done:
-        print('DONEEEEEEEEEEEEEE')
         break
 
 axes.grid(False)

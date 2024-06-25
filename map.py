@@ -96,7 +96,8 @@ class EnceladusEnvironment(gym.Env):
 		self.steps = np.array([[0, 1, 1, 1, 0, -1, -1, -1],
 							   [1, 1, 0, -1, -1, -1, 0, 1]])
 		
-		self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['passed']
+		if self.grid_width-1 >= self.rover_x >= 0 and self.grid_height-1 >= self.rover_y >=0:
+			self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['passed']
 
 		self.initial_difference_x = np.abs(self.end_x - self.rover_x)
 		self.initial_difference_y = np.abs(self.end_y - self.rover_y)
@@ -110,23 +111,22 @@ class EnceladusEnvironment(gym.Env):
 		self.reward_x = 0
 		self.reward_y = 0
 
-		if self.grid_width > self.rover_x >= 0 and self.grid_height > self.rover_y >=0:
-			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['ridge']:
-				self.reward = -100
-				print("CRASHED INTO RIDGE")
-				done = True
-
+		if self.grid_width-1 >= self.rover_x >= 0 and self.grid_height-1 >= self.rover_y >=0:
 			self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
 
 			if self.initial_difference_x > self.new_difference_x:
 				self.reward_x = 1
+				if self.rover_x == self.end_x + 1 or self.rover_x == self.end_x - 1:
+					self.reward_x = 5
 			elif self.initial_difference_x < self.new_difference_x:
 				self.reward_x = -2
 			if self.rover_x >= self.grid_width-1 or self.rover_x <= 1:
 				self.reward_x = -2
-
+			
 			if self.initial_difference_y > self.new_difference_y:
 				self.reward_y = 1
+				if self.rover_y == self.end_y + 1 or self.rover_y == self.end_y - 1:
+					self.reward_y = 5
 			elif self.initial_difference_y < self.new_difference_y:
 				self.reward_y = -2			
 			if self.rover_y >= self.grid_height-1 or self.rover_y <= 1:
@@ -134,13 +134,16 @@ class EnceladusEnvironment(gym.Env):
 
 			self.reward = self.reward_x + self.reward_y
 
+			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['ridge']:
+				self.reward = -20
+				done = True
+
 			if self.rover_x == self.end_x and self.rover_y == self.end_y:
-				self.reward = 200
-				print("MADE IT TO END POINT")
+				self.reward = 20
 				done = True
 
 		else:
-			self.reward = -100
+			self.reward = -20
 			done = True
 
 		# plt.figure(figsize=(6, 6))
@@ -158,24 +161,19 @@ class EnceladusEnvironment(gym.Env):
 	def reset(self, seed=None, options = None):
 		if seed:
 			np.random.seed(seed)
-		self.surface_grid = np.zeros((self.grid_width, self.grid_height))
-		
-		self.start_x = self.fixed_point_distance
-		self.start_y = self.grid_height-self.fixed_point_distance
-		self.rover_x = self.start_x
-		self.rover_y = self.start_y
 
-		self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
-		self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
+		self.generate_grid()
+		#self.surface_grid = np.zeros((self.grid_width, self.grid_height))
+		
+		#self.start_x = self.fixed_point_distance
+		#self.start_y = self.grid_height-self.fixed_point_distance
+		#self.rover_x = self.start_x
+		#self.rover_y = self.start_y
+
+		#self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
+		#self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
 		return self.get_observations(), {}
 	
 if __name__ == "__main__":
 	enceladus_environment = EnceladusEnvironment()
 	print(enceladus_environment.step(4)[1])
-	print(enceladus_environment.step(5)[1])
-	print(enceladus_environment.step(3)[1])
-	print(enceladus_environment.step(3)[1])
-	print(enceladus_environment.step(3)[1])
-	print(enceladus_environment.step(4)[1])
-	print(enceladus_environment.step(2)[1])
-	print(enceladus_environment.step(3)[1])
