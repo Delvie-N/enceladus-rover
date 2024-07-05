@@ -12,7 +12,7 @@ def test_manual():
     frames = []
     fps = 10
 
-    n_steps = 40
+    n_steps = 100
     for step in range(n_steps):
         #print('Step:', step+1)
         observations, reward, done, _, _ = env.step(np.random.randint(0,7))

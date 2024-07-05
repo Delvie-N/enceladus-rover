@@ -23,10 +23,26 @@ class EnceladusNetwork(nn.Module):
         hidden_layer1 = 20
         hidden_layer2 = 10
 
+        padding = 0
+        dilation = 1
+        kernel_size = 3
+        stride = 1
+        conv_input_size = EnceladusEnvironment().grid_height
+        conv_output_size_1 = np.int(((conv_input_size + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
+        conv_output_size_2 = np.int(((conv_output_size_1 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
+        conv_output_size_3 = np.int(((conv_output_size_2 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
+
         self.shared_network = nn.Sequential(
-            nn.Linear(observation_space_dimensions, hidden_layer1),
+            nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(1, 1, kernel_size),
+            #nn.Conv2d(1, conv_output, 3),
+            nn.Flatten(),
+            nn.Linear(conv_output_size_3**2, hidden_layer1),
+            #nn.Sigmoid(),
             nn.Tanh(),
             nn.Linear(hidden_layer1, hidden_layer2),
+            #nn.Sigmoid(),
             nn.Tanh(),
         )
 
@@ -62,9 +78,19 @@ class RoverTraining():
         self.network = EnceladusNetwork(observation_space_dimensions, action_space_dimensions)
         self.optimizer = torch.optim.AdamW(self.network.parameters(), lr=self.learning_rate)
 
-    def sample_action(self, state):
+    def sample_action(self, observations):
+        state = [observations['position_x'], observations['position_y']]
+        state.extend(list(np.ndarray.flatten(observations['world'])))
+
         state = torch.tensor(np.array([state]))
-        action_means, action_std = self.network(state)
+        # convert the state into a tensor image to allow for convolution block
+        tensor_image_input = observations['world']
+        tensor_image_input = tensor_image_input.reshape((tensor_image_input.shape[0], tensor_image_input.shape[1], 1))
+        tensor_image = torch.from_numpy(tensor_image_input)
+
+        tensor_image = torch.permute(tensor_image, (2, 0, 1))
+
+        action_means, action_std = self.network(tensor_image)
 
         distribution = Normal(action_means[0] + self.epsilon, action_std[0] + self.epsilon)
         action_tensor = distribution.sample()
@@ -107,7 +133,7 @@ class RoverTraining():
 env = EnceladusEnvironment()
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(5000)
+total_episode_amount = int(100)
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -125,7 +151,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in [450]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int):
+for seed in np.random.randint(0, 500, size=total_seed_amount, dtype=int):
     seed = int(seed)
     seed_number += 1
 
@@ -135,13 +161,11 @@ for seed in [450]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int)
 
     rewards_over_episodes = []
 
-    for episode in range(total_episode_amount):
+    for episode in range(total_episode_amount): 
         observations, information = wrapped_env.reset(seed=seed)
         done = False
         while not done:
-            state = [observations['position_x'], observations['position_y']]
-            state.extend(list(np.ndarray.flatten(observations['world'])))
-            action = agent.sample_action(state)
+            action = agent.sample_action(observations)
 
             observations, reward, terminated, truncated, info = wrapped_env.step(action)
             agent.rewards.append(reward)
@@ -182,13 +206,13 @@ for running_mean_index in range(min_running_mean_index, max_running_mean_index):
     running_means_to_plot.append(running_mean)
 
 df1 = pd.DataFrame([rewards_to_plot]).melt()
-#df2 = pd.DataFrame([running_means_to_plot]).melt()
 df1.rename(columns={'variable': 'episodes', 'value': 'reward'}, inplace=True)
 sns.set(style='darkgrid', context='talk', palette='rainbow')
 sns.scatterplot(x='episodes', y='reward', data=df1).set(
     title='RoverTraining for EnceladusNetwork')
 plt.plot(running_means_index_to_plot, running_means_to_plot, color='red')
 
+#result_file_path = 'training_results/result_sigmoid_20_10.png'
 result_file_path = 'training_results/result_tanh_20_10.png'
 result_file_version = 1
 
@@ -214,9 +238,7 @@ observations = env.get_observations()
 agent.epsilon = 0
 
 for step in range(n_steps):
-    state = [observations['position_x'], observations['position_y']]
-    state.extend(list(np.ndarray.flatten(observations['world'])))
-    action = agent.sample_action(state)     
+    action = agent.sample_action(observations)     
 
     print('Step:', step+1)
     observations, reward, done, _, _ = env.step(action)
