@@ -35,8 +35,8 @@ class EnceladusEnvironment(gym.Env):
 				}
 
 	def generate_grid(self):
-		self.grid_width = 20 #40
-		self.grid_height = 20 #40
+		self.grid_width = 30 #40
+		self.grid_height = 30 #40
 		self.surface_grid = np.zeros((self.grid_width, self.grid_height))
 
 		self.fixed_point_distance = 2 #5
@@ -46,11 +46,11 @@ class EnceladusEnvironment(gym.Env):
 		self.end_x = self.grid_width-(self.fixed_point_distance+1)
 		self.end_y = self.fixed_point_distance
 
-		self.ridge_amount = np.random.randint(3,6)
+		self.ridge_amount = np.random.randint(6,12)
 		#self.ridge_amount = np.random.randint(6,12)
 
 		for ridge_i in range(self.ridge_amount):
-			ridge_size_max = np.random.randint(3,9)
+			ridge_size_max = np.random.randint(6,18)
 			#ridge_size_max = np.random.randint(6,18)
 			
 			#ridge_start_location_x = np.random.randint(0, self.grid_width)
@@ -69,10 +69,10 @@ class EnceladusEnvironment(gym.Env):
 				if (0 < ridge_location_x < self.grid_width-1) and (0 < ridge_location_y < self.grid_height-1):
 					self.surface_grid[ridge_location_x, ridge_location_y] = self.TYPE['ridge']
 
-		for boundary_point_x in [-1, 0, 1]:
+		for boundary_point_x in [-2, -1, 0, 1, 2]:
 			clearup_start_x = self.start_x + boundary_point_x
 			clearup_end_x = self.end_x + boundary_point_x
-			for boundary_point_y in [-1, 0, 1]:
+			for boundary_point_y in [-2, -1, 0, 1, 2]:
 				clearup_start_y = self.start_y + boundary_point_y
 				clearup_end_y = self.end_y + boundary_point_y
 				self.surface_grid[clearup_start_x, clearup_start_y] = self.TYPE['empty']
@@ -113,26 +113,44 @@ class EnceladusEnvironment(gym.Env):
 
 		self.reward_x = 0
 		self.reward_y = 0
-
+		
 		if self.grid_width-1 >= self.rover_x >= 0 and self.grid_height-1 >= self.rover_y >=0:
 			if self.initial_difference_x > self.new_difference_x:
 				self.reward_x = 1
 				if self.rover_x == self.end_x + 1 or self.rover_x == self.end_x - 1:
+					self.reward_x = 15
+				if self.rover_x == self.end_x + 2 or self.rover_x == self.end_x - 2:
+					self.reward_x = 10
+				if self.rover_x == self.end_x + 3 or self.rover_x == self.end_x - 3:
 					self.reward_x = 5
 			elif self.initial_difference_x < self.new_difference_x:
-				self.reward_x = -2
+				self.reward_x = -1
 			if self.rover_x >= self.grid_width-1 or self.rover_x <= 1:
-				self.reward_x = -2
+				self.reward_x = -1
 			
 			if self.initial_difference_y > self.new_difference_y:
 				self.reward_y = 1
 				if self.rover_y == self.end_y + 1 or self.rover_y == self.end_y - 1:
+					self.reward_y = 15
+				elif self.rover_y == self.end_y + 2 or self.rover_y == self.end_y - 2:
+					self.reward_y = 10
+				elif self.rover_y == self.end_y + 3 or self.rover_y == self.end_y - 3:
 					self.reward_y = 5
 			elif self.initial_difference_y < self.new_difference_y:
-				self.reward_y = -2			
+				self.reward_y = -1		
 			if self.rover_y >= self.grid_height-1 or self.rover_y <= 1:
-				self.reward_y = -2
+				self.reward_y = -1
 
+			if self.rover_x + 1 == self.TYPE['ridge'] or self.rover_x - 1 == self.TYPE['ridge']:
+				self.reward_x = -5
+			if self.rover_y + 1 == self.TYPE['ridge'] or self.rover_y - 1 == self.TYPE['ridge']:
+				self.reward_y = -5
+
+			if self.rover_x == 0 or self.rover_x == self.grid_width - 1:
+				self.reward_x = -5
+			if self.rover_y == 0 or self.rover_y == self.grid_height - 1:
+				self.reward_y = -5
+			
 			self.reward = self.reward_x + self.reward_y
 
 			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['ridge']:
@@ -144,8 +162,9 @@ class EnceladusEnvironment(gym.Env):
 				done = True
 
 			self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
+
 		else:
-			self.reward = -20
+			self.reward = -30
 			done = True
 
 		# plt.figure(figsize=(6, 6))

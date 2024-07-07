@@ -34,8 +34,11 @@ class EnceladusNetwork(nn.Module):
 
         self.shared_network = nn.Sequential(
             nn.Conv2d(1, 1, kernel_size),
+            #nn.Tanh(),
             nn.Conv2d(1, 1, kernel_size),
+            #nn.Tanh(),
             nn.Conv2d(1, 1, kernel_size),
+            #nn.Tanh(),
             #nn.Conv2d(1, conv_output, 3),
             nn.Flatten(),
             nn.Linear(conv_output_size_3**2, hidden_layer1),
@@ -133,8 +136,8 @@ class RoverTraining():
 env = EnceladusEnvironment()
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(100)
-total_seed_amount = int(1)
+total_episode_amount = int(2500)
+total_seed_amount = int(10)
 
 observations = env.get_observations()
 state = [observations['position_x'], observations['position_y']]
@@ -152,6 +155,7 @@ model = agent.network
 seed_number = 0
 
 for seed in np.random.randint(0, 500, size=total_seed_amount, dtype=int):
+    high_score = -1000
     seed = int(seed)
     seed_number += 1
 
@@ -164,14 +168,40 @@ for seed in np.random.randint(0, 500, size=total_seed_amount, dtype=int):
     for episode in range(total_episode_amount): 
         observations, information = wrapped_env.reset(seed=seed)
         done = False
+        score = 0
         while not done:
             action = agent.sample_action(observations)
-
             observations, reward, terminated, truncated, info = wrapped_env.step(action)
             agent.rewards.append(reward)
+            score += reward
 
             done = terminated
-        
+
+        if score > high_score:
+            high_score = score
+
+            figure_highscore, axes_highscore = plt.subplots(figsize=(6, 6))
+
+            axes_highscore.imshow(env.surface_grid.transpose(), cmap=env.cmap)
+            axes_highscore.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s')
+            axes_highscore.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')
+
+            axes_highscore.grid(False)
+            figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
+
+            file_path_highscore = 'animations/highscores/rover_training_highscore.jpg'
+            file_version_highscore = 1
+
+            while os.path.isfile(file_path_highscore) is True:
+                if file_version_highscore == 1:
+                    file_path_highscore = file_path_highscore.split('.')[0] + f'-{file_version_highscore}.jpg'
+                else:
+                    file_path_highscore = file_path_highscore.replace(f'-{file_version_highscore-1}.jpg', f'-{file_version_highscore}.jpg')
+                file_version_highscore += 1
+
+            plt.savefig(file_path_highscore, dpi=150)
+            plt.close()
+    
         rewards_over_episodes.append(wrapped_env.return_queue[-1])
         agent.update()
 
@@ -189,7 +219,7 @@ for rewards in rewards_over_seeds:
     for reward in rewards:
         rewards_to_plot.append(reward[0])
 
-running_mean_size = 30
+running_mean_size = 100
 half_running_mean_size = int(running_mean_size/2)
 min_running_mean_index = half_running_mean_size
 max_running_mean_index = len(rewards_to_plot) - (half_running_mean_size)
@@ -205,6 +235,7 @@ for running_mean_index in range(min_running_mean_index, max_running_mean_index):
     running_mean = running_mean_sum/(running_mean_size+1)
     running_means_to_plot.append(running_mean)
 
+
 df1 = pd.DataFrame([rewards_to_plot]).melt()
 df1.rename(columns={'variable': 'episodes', 'value': 'reward'}, inplace=True)
 sns.set(style='darkgrid', context='talk', palette='rainbow')
@@ -212,8 +243,8 @@ sns.scatterplot(x='episodes', y='reward', data=df1).set(
     title='RoverTraining for EnceladusNetwork')
 plt.plot(running_means_index_to_plot, running_means_to_plot, color='red')
 
-#result_file_path = 'training_results/result_sigmoid_20_10.png'
-result_file_path = 'training_results/result_tanh_20_10.png'
+#result_file_path = 'training_results/sigmoid/result_sigmoid_20_10.png'
+result_file_path = 'training_results/tanh/result_tanh_20_10.png'
 result_file_version = 1
 
 while os.path.isfile(result_file_path) is True:
@@ -257,7 +288,7 @@ axes.grid(False)
 figure.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 rover_animation = animation.ArtistAnimation(figure, frames, interval=int(1000/fps), blit=True, repeat_delay=1000)
 
-file_path = 'animations/rover_animation_training.gif'
+file_path = 'animations/trainings/rover_animation_training.gif'
 file_version = 1
 
 while os.path.isfile(file_path) is True:
