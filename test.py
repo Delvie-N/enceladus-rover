@@ -14,10 +14,10 @@ def test_manual():
 
     n_steps = 100
     for step in range(n_steps):
-        #print('Step:', step+1)
+        print('Step:', step+1)
         observations, reward, done, _, _ = env.step(np.random.randint(0,7))
-        #print('Reward:', reward)
-        #print('Done?:', done, '\n')
+        print('Reward:', reward)
+        print('Done?:', done, '\n')
 
         new_frame = [axes.imshow(env.surface_grid.transpose(), cmap=env.cmap),
                     axes.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s'),
@@ -26,13 +26,13 @@ def test_manual():
         frames.append(new_frame)
 
         if done:
-            print('DONEEEEEEEEEEEEEE')
+            print('Done')
             break
 
     figure.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
     rover_animation = animation.ArtistAnimation(figure, frames, interval=int(1000/fps), blit=True, repeat_delay=1000)
 
-    file_path = 'animations/rover_animation_test.gif'
+    file_path = 'animations/test/rover_animation_test.gif'
     file_version = 1
 
     while os.path.isfile(file_path) is True:

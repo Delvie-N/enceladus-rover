@@ -5,13 +5,16 @@ import gymnasium as gym
 
 class EnceladusEnvironment(gym.Env):
 	"""
-	asdf
+	This class contains all required elements for generating the Enceladus Environment grid world, including the definition of the TYPEs, Observation and Action spaces
 	"""
+
 	TYPE = {'empty': 0,
 			'end': 1,
 			'passed': 2,
 			'rover': 3,
-			'ridge': 4
+			'ridge': 4,
+			'plume': 5,
+			'plumesampling': 6
 			}
 
 	def __init__(self) -> None:
@@ -35,28 +38,26 @@ class EnceladusEnvironment(gym.Env):
 				}
 
 	def generate_grid(self):
-		self.grid_width = 30 #40
-		self.grid_height = 30 #40
+		""" This function generates the actual surface grid world and adds start and end locations, icy ridges and a plume vent """
+
+		self.grid_width = 30 # originally 40
+		self.grid_height = 30 # originally 40
 		self.surface_grid = np.zeros((self.grid_width, self.grid_height))
 
-		self.fixed_point_distance = 2 #5
+		self.fixed_point_distance = 2 # originally 5
 
 		self.start_x = self.fixed_point_distance
 		self.start_y = self.grid_height-(self.fixed_point_distance+1)
 		self.end_x = self.grid_width-(self.fixed_point_distance+1)
 		self.end_y = self.fixed_point_distance
 
-		self.ridge_amount = np.random.randint(6,12)
-		#self.ridge_amount = np.random.randint(6,12)
+		self.ridge_amount = np.random.randint(6,10) # originally self.ridge_amount = np.random.randint(6,12)
 
 		for ridge_i in range(self.ridge_amount):
-			ridge_size_max = np.random.randint(6,18)
-			#ridge_size_max = np.random.randint(6,18)
+			ridge_size_max = np.random.randint(6,16) # originally ridge_size_max = np.random.randint(6,18)
 			
-			#ridge_start_location_x = np.random.randint(0, self.grid_width)
-			ridge_start_location_x = np.random.randint(self.start_x, self.end_x)
-			#ridge_start_location_y = np.random.randint(0, self.grid_height)
-			ridge_start_location_y = np.random.randint(self.end_y, self.start_y)
+			ridge_start_location_x = np.random.randint(self.start_x, self.end_x) # originally ridge_start_location_x = np.random.randint(0, self.grid_width)
+			ridge_start_location_y = np.random.randint(self.end_y, self.start_y) # originally ridge_start_location_y = np.random.randint(0, self.grid_height)
 
 			self.surface_grid[ridge_start_location_x, ridge_start_location_y] = self.TYPE['ridge']
 
@@ -68,6 +69,26 @@ class EnceladusEnvironment(gym.Env):
 				ridge_location_y += np.random.choice([-1, 0, 1])
 				if (0 < ridge_location_x < self.grid_width-1) and (0 < ridge_location_y < self.grid_height-1):
 					self.surface_grid[ridge_location_x, ridge_location_y] = self.TYPE['ridge']
+
+		self.plume_location_x = np.random.randint(self.start_x + 5, self.end_x - 5)
+		self.plume_location_y = np.random.randint(self.end_y + 5, self.start_y - 5)
+
+		for boundary_point_x in [-3, -2, -1, 0, 1, 2, 3]:
+			clearup_plume_x = self.plume_location_x + boundary_point_x
+			for boundary_point_y in [-3, -2, -1, 0, 1, 2, 3]:
+				clearup_plume_y = self.plume_location_y + boundary_point_y
+				self.surface_grid[clearup_plume_x, clearup_plume_y] = self.TYPE['empty']
+
+		self.plume_samplearea = []
+
+		for boundary_point_x in [-1, 0, 1]:
+			plume_samplearea_x = self.plume_location_x + boundary_point_x
+			for boundary_point_y in [-1, 0, 1]:
+				plume_samplearea_y = self.plume_location_y + boundary_point_y
+				self.surface_grid[plume_samplearea_x, plume_samplearea_y] = self.TYPE['plumesampling']
+				self.plume_samplearea.append([plume_samplearea_x, plume_samplearea_y])
+
+		self.surface_grid[self.plume_location_x, self.plume_location_y] = self.TYPE['plume']
 
 		for boundary_point_x in [-2, -1, 0, 1, 2]:
 			clearup_start_x = self.start_x + boundary_point_x
@@ -84,7 +105,7 @@ class EnceladusEnvironment(gym.Env):
 		self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
 		self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
 
-		self.cmap = colors.ListedColormap(['lightskyblue', 'red', 'lightgrey', 'black', 'steelblue'])
+		self.cmap = colors.ListedColormap(['lightskyblue', 'red', 'lightgrey', 'black', 'steelblue', 'aquamarine', 'mediumaquamarine'])
 		# plt.figure(figsize=(6, 6))
 		# plt.title('Exploring Enceladus')
 		# plt.imshow(self.surface_grid.transpose(), cmap=self.cmap)
@@ -95,6 +116,7 @@ class EnceladusEnvironment(gym.Env):
 	
 	def step(self, action):
 		done = False
+		self.plume_sampled = False
 
 		self.steps = np.array([[0, 1, 1, 1, 0, -1, -1, -1],
 							   [1, 1, 0, -1, -1, -1, 0, 1]])
@@ -102,14 +124,30 @@ class EnceladusEnvironment(gym.Env):
 		if self.grid_width-1 >= self.rover_x >= 0 and self.grid_height-1 >= self.rover_y >=0:
 			self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['passed']
 
-		self.initial_difference_x = np.abs(self.end_x - self.rover_x)
-		self.initial_difference_y = np.abs(self.end_y - self.rover_y)
+		for i in range(len(self.plume_samplearea)):
+			x_check = self.plume_samplearea[i][0]
+			y_check = self.plume_samplearea[i][1]
+			if self.surface_grid[x_check, y_check] == self.TYPE['passed']:
+				self.plume_sampled = True
+		
+		if self.plume_sampled == False:
+			self.initial_difference_x = np.abs(self.plume_location_x - self.rover_x)
+			self.initial_difference_y = np.abs(self.plume_location_y - self.rover_y)
+
+		if self.plume_sampled == True:
+			self.initial_difference_x = np.abs(self.end_x - self.rover_x)
+			self.initial_difference_y = np.abs(self.end_y - self.rover_y)
 
 		self.rover_x += self.steps[0, action]
 		self.rover_y += self.steps[1, action]
 
-		self.new_difference_x = np.abs(self.end_x - self.rover_x)
-		self.new_difference_y = np.abs(self.end_y - self.rover_y)
+		if self.plume_sampled == False:
+			self.new_difference_x = np.abs(self.plume_location_x - self.rover_x)
+			self.new_difference_y = np.abs(self.plume_location_y - self.rover_y)
+
+		if self.plume_sampled == True:
+			self.new_difference_x = np.abs(self.end_x - self.rover_x)
+			self.new_difference_y = np.abs(self.end_y - self.rover_y)
 
 		self.reward_x = 0
 		self.reward_y = 0
@@ -119,9 +157,11 @@ class EnceladusEnvironment(gym.Env):
 				self.reward_x = 1
 				if self.rover_x == self.end_x + 1 or self.rover_x == self.end_x - 1:
 					self.reward_x = 15
-				if self.rover_x == self.end_x + 2 or self.rover_x == self.end_x - 2:
+				elif self.rover_x == self.end_x + 2 or self.rover_x == self.end_x - 2:
 					self.reward_x = 10
-				if self.rover_x == self.end_x + 3 or self.rover_x == self.end_x - 3:
+				elif self.rover_x == self.end_x + 3 or self.rover_x == self.end_x - 3:
+					self.reward_x = 5
+				elif self.rover_x + 1 == self.TYPE['plumesampling'] or self.rover_x - 1 == self.TYPE['plumesampling']:
 					self.reward_x = 5
 			elif self.initial_difference_x < self.new_difference_x:
 				self.reward_x = -1
@@ -135,6 +175,8 @@ class EnceladusEnvironment(gym.Env):
 				elif self.rover_y == self.end_y + 2 or self.rover_y == self.end_y - 2:
 					self.reward_y = 10
 				elif self.rover_y == self.end_y + 3 or self.rover_y == self.end_y - 3:
+					self.reward_y = 5
+				elif self.rover_y + 1 == self.TYPE['plumesampling'] or self.rover_y - 1 == self.TYPE['plumesampling']:
 					self.reward_y = 5
 			elif self.initial_difference_y < self.new_difference_y:
 				self.reward_y = -1		
@@ -154,17 +196,24 @@ class EnceladusEnvironment(gym.Env):
 			self.reward = self.reward_x + self.reward_y
 
 			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['ridge']:
-				self.reward = -20
+				self.reward = -30
 				done = True
 
-			if self.rover_x == self.end_x and self.rover_y == self.end_y:
-				self.reward = 20
+			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['plume']:
+				self.reward = -30
+				done = True
+
+			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['plumesampling'] and self.plume_sampled == False:
+				self.reward = 50
+
+			if self.rover_x == self.end_x and self.rover_y == self.end_y and self.plume_sampled == True:
+				self.reward = 50
 				done = True
 
 			self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
 
 		else:
-			self.reward = -30
+			self.reward = -50
 			done = True
 
 		# plt.figure(figsize=(6, 6))
@@ -184,15 +233,7 @@ class EnceladusEnvironment(gym.Env):
 			np.random.seed(seed)
 
 		self.generate_grid()
-		#self.surface_grid = np.zeros((self.grid_width, self.grid_height))
-		
-		#self.start_x = self.fixed_point_distance
-		#self.start_y = self.grid_height-self.fixed_point_distance
-		#self.rover_x = self.start_x
-		#self.rover_y = self.start_y
 
-		#self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
-		#self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
 		return self.get_observations(), {}
 	
 if __name__ == "__main__":
