@@ -28,7 +28,7 @@ class EnceladusEnvironment(gym.Env):
 			'position_y': gym.spaces.Box(low=0, high=(self.grid_height-1), shape=(1,), dtype=np.int32)
 		})
 
-		#Action space
+		#Action space:
 		self.action_space = gym.spaces.Discrete(8)
 
 	def get_observations(self):
@@ -106,6 +106,7 @@ class EnceladusEnvironment(gym.Env):
 		self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
 
 		self.cmap = colors.ListedColormap(['lightskyblue', 'red', 'lightgrey', 'black', 'steelblue', 'aquamarine', 'mediumaquamarine'])
+		
 		# plt.figure(figsize=(6, 6))
 		# plt.title('Exploring Enceladus')
 		# plt.imshow(self.surface_grid.transpose(), cmap=self.cmap)
