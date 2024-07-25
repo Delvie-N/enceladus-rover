@@ -32,7 +32,7 @@ def test_manual():
     figure.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
     rover_animation = animation.ArtistAnimation(figure, frames, interval=int(1000/fps), blit=True, repeat_delay=1000)
 
-    file_path = 'animations/test/rover_animation_test.gif'
+    file_path = 'visuals/test/rover_animation_test.gif'
     file_version = 1
 
     while os.path.isfile(file_path) is True:

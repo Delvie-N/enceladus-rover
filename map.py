@@ -183,15 +183,15 @@ class EnceladusEnvironment(gym.Env):
 			if self.rover_y >= self.grid_height-1 or self.rover_y <= 1:
 				self.reward_y = -1
 
-			if self.rover_x + 1 == self.TYPE['ridge'] or self.rover_x - 1 == self.TYPE['ridge']:
-				self.reward_x = -5
-			if self.rover_y + 1 == self.TYPE['ridge'] or self.rover_y - 1 == self.TYPE['ridge']:
-				self.reward_y = -5
+			#if self.rover_x + 1 == self.TYPE['ridge'] or self.rover_x - 1 == self.TYPE['ridge']:
+			#	self.reward_x = -5
+			#if self.rover_y + 1 == self.TYPE['ridge'] or self.rover_y - 1 == self.TYPE['ridge']:
+			#	self.reward_y = -5
 
-			if self.rover_x == 0 or self.rover_x == self.grid_width - 1:
-				self.reward_x = -5
-			if self.rover_y == 0 or self.rover_y == self.grid_height - 1:
-				self.reward_y = -5
+			#if self.rover_x == 0 or self.rover_x == self.grid_width - 1:
+			#	self.reward_x = -5
+			#if self.rover_y == 0 or self.rover_y == self.grid_height - 1:
+			#	self.reward_y = -5
 			
 			self.reward = self.reward_x + self.reward_y
 

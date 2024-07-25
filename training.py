@@ -14,14 +14,16 @@ import os
 
 class EnceladusNetwork(nn.Module):
     """
-    asdf
+    This class contains the setup of the Neural Network required for employing DQN for exploring Enceladus
+    - It is a convolutional neural network with three convolutional layers and two hidden layers
+    - For the activation function using either Sigmoid or Tanh can be used by commenting the relevant lines
     """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions) -> None:
         super().__init__()
 
-        hidden_layer1 = 20
-        hidden_layer2 = 10
+        hidden_layer1 = 32
+        hidden_layer2 = 16
 
         padding = 0
         dilation = 1
@@ -34,12 +36,8 @@ class EnceladusNetwork(nn.Module):
 
         self.shared_network = nn.Sequential(
             nn.Conv2d(1, 1, kernel_size),
-            #nn.Tanh(),
             nn.Conv2d(1, 1, kernel_size),
-            #nn.Tanh(),
             nn.Conv2d(1, 1, kernel_size),
-            #nn.Tanh(),
-            #nn.Conv2d(1, conv_output, 3),
             nn.Flatten(),
             nn.Linear(conv_output_size_3**2, hidden_layer1),
             #nn.Sigmoid(),
@@ -67,19 +65,20 @@ class EnceladusNetwork(nn.Module):
 
 class RoverTraining():
     """
-    asdf
+    This class contains the implementation of the NN from EnceladusNetwork by taking the observation and action space dimensions to put into the NN and calculate
+    the probabilities for each action and returning the optimal action according to the epsilon-greedy policy
     """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 0.001
         self.gamma = 0.99
-        self.epsilon = 1e-2 #1e-6
+        self.epsilon = 1e-2 # originally 1e-6
 
         self.probabilities = []
         self.rewards = []
 
         self.network = EnceladusNetwork(observation_space_dimensions, action_space_dimensions)
-        self.optimizer = torch.optim.AdamW(self.network.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.SGD(self.network.parameters(), lr=self.learning_rate) # originally torch.optim.AdamW(self.network.parameters(), lr=self.learning_rate)
 
     def sample_action(self, observations):
         state = [observations['position_x'], observations['position_y']]
@@ -136,8 +135,8 @@ class RoverTraining():
 env = EnceladusEnvironment()
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(2500)
-total_seed_amount = int(10)
+total_episode_amount = int(100)
+total_seed_amount = int(1000)
 
 observations = env.get_observations()
 state = [observations['position_x'], observations['position_y']]
@@ -154,7 +153,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in np.random.randint(0, 500, size=total_seed_amount, dtype=int):
+for seed in np.arange(1, total_seed_amount+1):#np.random.randint(0, 500, size=total_seed_amount, dtype=int):
     high_score = -1000
     seed = int(seed)
     seed_number += 1
@@ -189,7 +188,7 @@ for seed in np.random.randint(0, 500, size=total_seed_amount, dtype=int):
             axes_highscore.grid(False)
             figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
-            file_path_highscore = 'animations/highscores/rover_training_highscore.jpg'
+            file_path_highscore = 'visuals/highscores/rover_training_highscore.jpg'
             file_version_highscore = 1
 
             while os.path.isfile(file_path_highscore) is True:
@@ -219,7 +218,7 @@ for rewards in rewards_over_seeds:
     for reward in rewards:
         rewards_to_plot.append(reward[0])
 
-running_mean_size = 100
+running_mean_size = 250
 half_running_mean_size = int(running_mean_size/2)
 min_running_mean_index = half_running_mean_size
 max_running_mean_index = len(rewards_to_plot) - (half_running_mean_size)
@@ -288,7 +287,7 @@ axes.grid(False)
 figure.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 rover_animation = animation.ArtistAnimation(figure, frames, interval=int(1000/fps), blit=True, repeat_delay=1000)
 
-file_path = 'animations/trainings/rover_animation_training.gif'
+file_path = 'visuals/trainings/rover_animation_training.gif'
 file_version = 1
 
 while os.path.isfile(file_path) is True:
