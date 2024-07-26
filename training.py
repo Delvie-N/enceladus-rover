@@ -135,8 +135,8 @@ class RoverTraining():
 env = EnceladusEnvironment()
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(10)
-total_seed_amount = int(10000)
+total_episode_amount = int(5000)
+total_seed_amount = int(10)
 
 observations = env.get_observations()
 state = [observations['position_x'], observations['position_y']]
@@ -162,7 +162,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in np.arange(1, total_seed_amount+1):#np.random.randint(0, 500, size=total_seed_amount, dtype=int):
+for seed in np.arange(1, total_seed_amount+1): #np.random.randint(0, 500, size=total_seed_amount, dtype=int): 
     high_score = -1000
     seed = int(seed)
     seed_number += 1
@@ -185,30 +185,31 @@ for seed in np.arange(1, total_seed_amount+1):#np.random.randint(0, 500, size=to
 
             done = terminated
 
-        #if score > high_score:
-        #    high_score = score
+        if score > high_score:
+            high_score = score
 
-        #    figure_highscore, axes_highscore = plt.subplots(figsize=(6, 6))
+            figure_highscore, axes_highscore = plt.subplots(figsize=(6, 6))
 
-        #    axes_highscore.imshow(env.surface_grid.transpose(), cmap=env.cmap)
-        #    axes_highscore.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s')
-        #    axes_highscore.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')
+            axes_highscore.imshow(env.surface_grid.transpose(), cmap=env.cmap)
+            axes_highscore.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s')
+            axes_highscore.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')
 
-        #    axes_highscore.grid(False)
-        #    figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
+            axes_highscore.grid(False)
+            figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
-        #    file_path_highscore = 'visuals/highscores/rover_training_highscore.jpg'
-        #    file_version_highscore = 1
+            file_path_highscore = 'visuals/highscores/rover_training_highscore.jpg'
+            file_version_highscore = 1
 
-        #    while os.path.isfile(file_path_highscore) is True:
-        #        if file_version_highscore == 1:
-        #            file_path_highscore = file_path_highscore.split('.')[0] + f'-{file_version_highscore}.jpg'
-        #        else:
-        #            file_path_highscore = file_path_highscore.replace(f'-{file_version_highscore-1}.jpg', f'-{file_version_highscore}.jpg')
-        #        file_version_highscore += 1
+            while os.path.isfile(file_path_highscore) is True:
+                if file_version_highscore == 1:
+                    file_path_highscore = file_path_highscore.split('.')[0] + f'-{file_version_highscore}.jpg'
+                else:
+                    file_path_highscore = file_path_highscore.replace(f'-{file_version_highscore-1}.jpg', f'-{file_version_highscore}.jpg')
+                file_version_highscore += 1
 
-        #    plt.savefig(file_path_highscore, dpi=150)
-        #    plt.close()
+            plt.savefig(file_path_highscore, dpi=150)
+            plt.close()
+            print(file_version_highscore-1, ":", score )
     
         rewards_over_episodes.append(wrapped_env.return_queue[-1])
         agent.update()
@@ -227,7 +228,7 @@ for rewards in rewards_over_seeds:
     for reward in rewards:
         rewards_to_plot.append(reward[0])
 
-running_mean_size = (total_episode_amount*total_seed_amount)//1000
+running_mean_size = int((total_episode_amount*total_seed_amount)/100)
 half_running_mean_size = int(running_mean_size/2)
 min_running_mean_index = half_running_mean_size
 max_running_mean_index = len(rewards_to_plot) - (half_running_mean_size)

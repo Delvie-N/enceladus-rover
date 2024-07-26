@@ -153,36 +153,62 @@ class EnceladusEnvironment(gym.Env):
 		self.reward_x = 0
 		self.reward_y = 0
 		
-		if self.grid_width-1 >= self.rover_x >= 0 and self.grid_height-1 >= self.rover_y >=0:
-			if self.initial_difference_x > self.new_difference_x:
-				self.reward_x = 1
-				if self.rover_x == self.end_x + 1 or self.rover_x == self.end_x - 1:
+		if self.grid_width-1 >= self.rover_x >= 0 and self.grid_height-1 >= self.rover_y >= 0:
+			if self.plume_sampled == True and (self.end_x - 3 <= self.rover_x <= self.end_x + 3) == True and (self.end_y - 3 <= self.rover_y <= self.end_y + 3) == True:
+				if  self.rover_x == self.end_x + 1 or self.rover_x == self.end_x - 1:
 					self.reward_x = 15
 				elif self.rover_x == self.end_x + 2 or self.rover_x == self.end_x - 2:
 					self.reward_x = 10
 				elif self.rover_x == self.end_x + 3 or self.rover_x == self.end_x - 3:
 					self.reward_x = 5
-				elif self.rover_x + 1 == self.TYPE['plumesampling'] or self.rover_x - 1 == self.TYPE['plumesampling']:
-					self.reward_x = 5
-			elif self.initial_difference_x < self.new_difference_x:
-				self.reward_x = -1
-			if self.rover_x >= self.grid_width-1 or self.rover_x <= 1:
-				self.reward_x = -1
-			
-			if self.initial_difference_y > self.new_difference_y:
-				self.reward_y = 1
+
 				if self.rover_y == self.end_y + 1 or self.rover_y == self.end_y - 1:
 					self.reward_y = 15
 				elif self.rover_y == self.end_y + 2 or self.rover_y == self.end_y - 2:
 					self.reward_y = 10
 				elif self.rover_y == self.end_y + 3 or self.rover_y == self.end_y - 3:
 					self.reward_y = 5
-				elif self.rover_y + 1 == self.TYPE['plumesampling'] or self.rover_y - 1 == self.TYPE['plumesampling']:
+
+			#if self.initial_difference_x > self.new_difference_x:
+				#self.reward_x = 1
+				#if self.rover_x == self.end_x + 1 or self.rover_x == self.end_x - 1:
+					#self.reward_x = 15
+				#elif self.rover_x == self.end_x + 2 or self.rover_x == self.end_x - 2:
+					#self.reward_x = 10
+				#elif self.rover_x == self.end_x + 3 or self.rover_x == self.end_x - 3:
+					#self.reward_x = 5
+				#elif self.rover_x + 1 == self.TYPE['plumesampling'] or self.rover_x - 1 == self.TYPE['plumesampling']:
+					#self.reward_x = 5
+			#elif self.initial_difference_x < self.new_difference_x:
+			#	self.reward_x = -1
+			#if self.rover_x >= self.grid_width-1 or self.rover_x <= 1:
+			#	self.reward_x = -1
+			
+			if self.plume_sampled == False and (self.plume_location_x - 3 <= self.rover_x <= self.plume_location_x + 3) == True and (self.plume_location_y - 3 <= self.plume_location_y <= self.plume_location_y + 3) == True:
+				if self.rover_x + 1 == self.TYPE['plumesampling'] or self.rover_x - 1 == self.TYPE['plumesampling']:
+					self.reward_x = 10
+				elif self.rover_x + 2 == self.TYPE['plumesampling'] or self.rover_x - 2 == self.TYPE['plumesampling']:
+					self.reward_x = 5
+
+				if self.rover_y + 1 == self.TYPE['plumesampling'] or self.rover_y - 1 == self.TYPE['plumesampling']:
+					self.reward_y = 10
+				if self.rover_y + 2 == self.TYPE['plumesampling'] or self.rover_y - 2 == self.TYPE['plumesampling']:
 					self.reward_y = 5
-			elif self.initial_difference_y < self.new_difference_y:
-				self.reward_y = -1		
-			if self.rover_y >= self.grid_height-1 or self.rover_y <= 1:
-				self.reward_y = -1
+
+			#if self.initial_difference_y > self.new_difference_y:
+				#self.reward_y = 1
+				#if self.rover_y == self.end_y + 1 or self.rover_y == self.end_y - 1:
+					#self.reward_y = 15
+				#elif self.rover_y == self.end_y + 2 or self.rover_y == self.end_y - 2:
+					#self.reward_y = 10
+				#elif self.rover_y == self.end_y + 3 or self.rover_y == self.end_y - 3:
+					#self.reward_y = 5
+				#elif self.rover_y + 1 == self.TYPE['plumesampling'] or self.rover_y - 1 == self.TYPE['plumesampling']:
+					#self.reward_y = 5
+			#elif self.initial_difference_y < self.new_difference_y:
+			#	self.reward_y = -1		
+			#if self.rover_y >= self.grid_height-1 or self.rover_y <= 1:
+			#	self.reward_y = -1
 
 			#if self.rover_x + 1 == self.TYPE['ridge'] or self.rover_x - 1 == self.TYPE['ridge']:
 			#	self.reward_x = -5
@@ -197,24 +223,24 @@ class EnceladusEnvironment(gym.Env):
 			self.reward = self.reward_x + self.reward_y
 
 			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['ridge']:
-				self.reward = -30
+				self.reward = -500 #-30
 				done = True
 
 			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['plume']:
-				self.reward = -30
+				self.reward = -500 #-30
 				done = True
 
 			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['plumesampling'] and self.plume_sampled == False:
-				self.reward = 50
+				self.reward = 500
 
 			if self.rover_x == self.end_x and self.rover_y == self.end_y and self.plume_sampled == True:
-				self.reward = 50
+				self.reward = 500
 				done = True
 
 			self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
 
 		else:
-			self.reward = -50
+			self.reward = -500
 			done = True
 
 		# plt.figure(figsize=(6, 6))
