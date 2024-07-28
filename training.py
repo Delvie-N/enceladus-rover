@@ -72,7 +72,7 @@ class RoverTraining():
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 1e-4 # originally 1e-3
         self.gamma = 1 - 1e-2 # originally 1 - 1e-2
-        self.epsilon = 1e-2 # originally 1e-6
+        self.epsilon = 1e-3 # originally 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -135,7 +135,7 @@ class RoverTraining():
 env = EnceladusEnvironment()
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(25000)
+total_episode_amount = int(1000) #50000
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -162,7 +162,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in [2]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
+for seed in [152]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
     high_score = -1000
     seed = int(seed)
     seed_number += 1
@@ -172,14 +172,22 @@ for seed in [2]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): 
     np.random.seed(seed)
 
     rewards_over_episodes = []
+    mission_success_over_episodes = []
 
     for episode in range(total_episode_amount): 
         observations, information = wrapped_env.reset(seed=seed)
         done = False
+        mission_success = False
         score = 0
         while not done:
             action = agent.sample_action(observations)
             observations, reward, terminated, truncated, info = wrapped_env.step(action)
+
+            unpassed_samplearea = np.count_nonzero(observations['world'] == 6)
+            unpassed_endpoint = np.count_nonzero(observations['world'] == 1)
+            if unpassed_samplearea < 8 and unpassed_endpoint < 1:
+                mission_success = True
+            
             agent.rewards.append(reward)
             score += reward
 
@@ -212,11 +220,13 @@ for seed in [2]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): 
             #print(file_version_highscore-1, ":", score )
     
         rewards_over_episodes.append(wrapped_env.return_queue[-1])
+        mission_success_over_episodes.append(mission_success)
         agent.update()
 
         if episode % 1 == 0:
             average_reward = int(np.mean(wrapped_env.return_queue))
-            print(f'seed {seed_number:<6}: {seed:>3} so {seed_number/total_seed_amount:>4.1%}\t | \t {episode :>4} so {episode/total_episode_amount:>4.1%} \t | \t {average_reward :<20}', end='\r')
+            average_mission_success_over_episodes = np.mean(mission_success_over_episodes)
+            print(f'seed {seed_number:<6}: {seed:>3} so {seed_number/total_seed_amount:>4.1%} \t | \t {episode :>4} so {episode/total_episode_amount:>4.1%} \t | \t {average_reward :<10} \t | \t average mission success: {average_mission_success_over_episodes:>4.1%}', end='\r')
 
     rewards_over_seeds.append(rewards_over_episodes)
     
@@ -282,7 +292,14 @@ for step in range(n_steps):
 
     print('Step:', step+1)
     observations, reward, done, _, _ = env.step(action)
+
+    unpassed_samplearea = np.count_nonzero(observations['world'] == 6)
+    unpassed_endpoint = np.count_nonzero(observations['world'] == 1)
+    if unpassed_samplearea < 8 and unpassed_endpoint < 1:
+        mission_success = True
+
     print('Reward:', reward)
+    print('Mission success:', mission_success)
     print('Done?:', done, '\n')
 
     new_frame = [axes.imshow(env.surface_grid.transpose(), cmap=env.cmap),
