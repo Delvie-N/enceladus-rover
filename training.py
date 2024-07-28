@@ -70,8 +70,8 @@ class RoverTraining():
     """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
-        self.learning_rate = 0.001
-        self.gamma = 0.99
+        self.learning_rate = 1e-4 # originally 1e-3
+        self.gamma = 1 - 1e-2 # originally 1 - 1e-2
         self.epsilon = 1e-2 # originally 1e-6
 
         self.probabilities = []
@@ -135,8 +135,8 @@ class RoverTraining():
 env = EnceladusEnvironment()
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(5000)
-total_seed_amount = int(10)
+total_episode_amount = int(25000)
+total_seed_amount = int(1)
 
 observations = env.get_observations()
 state = [observations['position_x'], observations['position_y']]
@@ -162,7 +162,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in np.arange(1, total_seed_amount+1): #np.random.randint(0, 500, size=total_seed_amount, dtype=int): 
+for seed in [2]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
     high_score = -1000
     seed = int(seed)
     seed_number += 1
@@ -209,7 +209,7 @@ for seed in np.arange(1, total_seed_amount+1): #np.random.randint(0, 500, size=t
 
             plt.savefig(file_path_highscore, dpi=150)
             plt.close()
-            print(file_version_highscore-1, ":", score )
+            #print(file_version_highscore-1, ":", score )
     
         rewards_over_episodes.append(wrapped_env.return_queue[-1])
         agent.update()
