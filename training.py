@@ -30,9 +30,9 @@ class EnceladusNetwork(nn.Module):
         kernel_size = 3
         stride = 1
         conv_input_size = EnceladusEnvironment().grid_height
-        conv_output_size_1 = np.int(((conv_input_size + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
-        conv_output_size_2 = np.int(((conv_output_size_1 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
-        conv_output_size_3 = np.int(((conv_output_size_2 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
+        conv_output_size_1 = np.int64(((conv_input_size + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
+        conv_output_size_2 = np.int64(((conv_output_size_1 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
+        conv_output_size_3 = np.int64(((conv_output_size_2 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
 
         self.shared_network = nn.Sequential(
             nn.Conv2d(1, 1, kernel_size),
@@ -70,9 +70,9 @@ class RoverTraining():
     """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
-        self.learning_rate = 1e-4 # originally 1e-3
-        self.gamma = 1 - 1e-2 # originally 1 - 1e-2
-        self.epsilon = 1e-3 # originally 1e-6
+        self.learning_rate = 1e-3 # originally 1e-3
+        self.gamma = 1 - 1e-1 # originally 1 - 1e-2
+        self.epsilon = 1e-4 # originally 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -133,9 +133,10 @@ class RoverTraining():
         self.rewards = []
 
 env = EnceladusEnvironment()
+print('Hello Icy World')
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(1000) #50000
+total_episode_amount = int(10000) #50000
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -162,7 +163,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in [152]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
+for seed in [362]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
     high_score = -1000
     seed = int(seed)
     seed_number += 1
@@ -226,10 +227,11 @@ for seed in [152]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int)
         if episode % 1 == 0:
             average_reward = int(np.mean(wrapped_env.return_queue))
             average_mission_success_over_episodes = np.mean(mission_success_over_episodes)
-            print(f'seed {seed_number:<6}: {seed:>3} so {seed_number/total_seed_amount:>4.1%} \t | \t {episode :>4} so {episode/total_episode_amount:>4.1%} \t | \t {average_reward :<10} \t | \t average mission success: {average_mission_success_over_episodes:>4.1%}', end='\r')
+            #print(f'seed {seed_number:<6}: {seed:>3} so {seed_number/total_seed_amount:>4.1%} \t | \t {episode :>4} so {episode/total_episode_amount:>4.1%} \t | \t {average_reward :<10} \t | \t average mission success: {average_mission_success_over_episodes:>4.1%}', end='\r')
+            print(f'seed {seed_number}: {seed} so {seed_number/total_seed_amount:.1%} | {episode} so {episode/total_episode_amount:>4.1%} | {average_reward} | average mission success: {average_mission_success_over_episodes:.1%} \t', end='\r')
 
     rewards_over_seeds.append(rewards_over_episodes)
-    
+
 torch.save(model.state_dict(), weight_path)
 
 rewards_to_plot = []
@@ -263,7 +265,7 @@ sns.scatterplot(x='episodes', y='reward', data=df1).set(
 plt.plot(running_means_index_to_plot, running_means_to_plot, color='red')
 
 #result_file_path = 'training_results/sigmoid/result_sigmoid_20_10.png'
-result_file_path = 'training_results/tanh/result_tanh_20_10.png'
+result_file_path = 'training_results/tanh/result_tanh_32_16.png'
 result_file_version = 1
 
 while os.path.isfile(result_file_path) is True:
