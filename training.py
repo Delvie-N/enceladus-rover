@@ -71,7 +71,7 @@ class RoverTraining():
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 1e-3 # originally 1e-3
-        self.gamma = 1 - 1e-1 # originally 1 - 1e-2
+        self.gamma = 1 - 1e-2 # originally 1 - 1e-2
         self.epsilon = 1e-4 # originally 1e-6
 
         self.probabilities = []
@@ -136,7 +136,7 @@ env = EnceladusEnvironment()
 print('Hello Icy World')
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(10000) #50000
+total_episode_amount = int(20000) #50000
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -163,7 +163,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in [362]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
+for seed in [137]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
     high_score = -1000
     seed = int(seed)
     seed_number += 1
