@@ -8,13 +8,22 @@ class EnceladusEnvironment(gym.Env):
 	This class contains all required elements for generating the Enceladus Environment grid world, including the definition of the TYPEs, Observation and Action spaces
 	"""
 
-	TYPE = {'empty': 0,
-			'end': 1,
-			'passed': 2,
-			'rover': 3,
-			'ridge': 4,
-			'plume': 5,
-			'plumesampling': 6
+	# TYPE = {'empty': 0,
+	# 		'end': 1,
+	# 		'passed': 2,
+	# 		'rover': 3,
+	# 		'ridge': 4,
+	# 		'plume': 5,
+	# 		'plumesampling': 6
+	# 		}
+	
+	TYPE = {'empty': 2,
+			'end': 4,
+			'passed': 0,
+			'rover': 1,
+			'ridge': -2,
+			'plume': -1,
+			'plumesampling': 3
 			}
 
 	def __init__(self) -> None:
@@ -43,6 +52,7 @@ class EnceladusEnvironment(gym.Env):
 		self.grid_width = 20 # originally 40
 		self.grid_height = 20 # originally 40
 		self.surface_grid = np.zeros((self.grid_width, self.grid_height))
+		self.surface_grid[:,:] = self.TYPE['empty']
 
 		self.fixed_point_distance = 3 #2 # originally 5
 
@@ -105,8 +115,9 @@ class EnceladusEnvironment(gym.Env):
 		self.surface_grid[self.rover_x, self.rover_y] = self.TYPE['rover']
 		self.surface_grid[self.end_x, self.end_y] = self.TYPE['end']
 
-		self.cmap = colors.ListedColormap(['lightskyblue', 'red', 'lightgrey', 'black', 'steelblue', 'aquamarine', 'mediumaquamarine'])
-		
+		#self.cmap = colors.ListedColormap(['lightskyblue', 'red', 'lightgrey', 'black', 'steelblue', 'aquamarine', 'mediumaquamarine'])
+		self.cmap = colors.ListedColormap(['steelblue', 'aquamarine', 'lightgrey', 'black', 'lightskyblue', 'mediumaquamarine', 'red'])
+
 		# plt.figure(figsize=(6, 6))
 		# plt.title('Exploring Enceladus')
 		# plt.imshow(self.surface_grid.transpose(), cmap=self.cmap)
@@ -157,15 +168,15 @@ class EnceladusEnvironment(gym.Env):
 			#if self.initial_difference_x == self.new_difference_x:
 			#	self.reward_x = 1
 			if self.initial_difference_x > self.new_difference_x:
-				self.reward_x = 1
+				self.reward_x = 5
 			if self.initial_difference_x < self.new_difference_x:
-				self.reward_x = -1
+				self.reward_x = -5
 			#if self.initial_difference_y == self.new_difference_y:
 			#	self.reward_y = 1
 			if self.initial_difference_y > self.new_difference_y:
-				self.reward_y = 1
+				self.reward_y = 5
 			if self.initial_difference_y < self.new_difference_y:
-				self.reward_y = -1
+				self.reward_y = -5
 
 			#if self.plume_sampled == False and (self.plume_location_x-4 <= self.rover_x <= self.plume_location_x+4) and (self.plume_location_y-4 <= self.rover_y <= self.plume_location_y+4):
 			#	if self.initial_difference_x >= self.new_difference_x:
@@ -253,7 +264,7 @@ class EnceladusEnvironment(gym.Env):
 				done = True
 
 			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['plume']:
-				self.reward = -100 #-50 #-100 #-200 #-30
+				self.reward = -50 #-100 #-50 #-100 #-200 #-30
 				done = True
 
 			if self.surface_grid[self.rover_x, self.rover_y] == self.TYPE['plumesampling'] and self.plume_sampled == False:

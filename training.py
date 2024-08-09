@@ -40,8 +40,11 @@ class EnceladusNetwork(nn.Module):
 
         self.shared_network = nn.Sequential(
             nn.Conv2d(1, 6, kernel_size), #nn.Conv2d(1, 1, kernel_size),
-            nn.Conv2d(6, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
-            nn.Conv2d(12, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Tanh(),
+            nn.Conv2d(6, 10, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Tanh(),
+            nn.Conv2d(10, 10, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Tanh(),
             nn.Flatten(),
             nn.Linear(conv_output_size_3**2, hidden_layer1),
             #nn.Sigmoid(),
@@ -76,7 +79,7 @@ class RoverTraining():
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 1e-3 # originally 1e-3
         self.gamma = 1 - 1e-2 # originally 1 - 1e-2
-        self.epsilon = 1e-5 # originally 1e-6
+        self.epsilon = 1e-4 # originally 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -193,8 +196,8 @@ for seed in [27]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int):
             action = agent.sample_action(observations)
             observations, reward, terminated, truncated, info = wrapped_env.step(action)
 
-            unpassed_samplearea = np.count_nonzero(observations['world'] == 6)
-            unpassed_endpoint = np.count_nonzero(observations['world'] == 1)
+            unpassed_samplearea = np.count_nonzero(observations['world'] == 3)
+            unpassed_endpoint = np.count_nonzero(observations['world'] == 4)
             if unpassed_samplearea < 8 and unpassed_endpoint < 1:
                 mission_success = True
             
@@ -312,8 +315,8 @@ for step in range(n_steps):
     print('Step:', step+1)
     observations, reward, done, _, _ = env.step(action)
 
-    unpassed_samplearea = np.count_nonzero(observations['world'] == 6)
-    unpassed_endpoint = np.count_nonzero(observations['world'] == 1)
+    unpassed_samplearea = np.count_nonzero(observations['world'] == 3)
+    unpassed_endpoint = np.count_nonzero(observations['world'] == 4)
     if unpassed_samplearea < 8 and unpassed_endpoint < 1:
         mission_success = True
 
