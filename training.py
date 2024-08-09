@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from time import sleep
 import os
+import time
+
+# Volgende run wel weer meerdere seeds proberen
+# Daarna als dat ook niet werkt monte carlo of sarsa proberen
 
 class EnceladusNetwork(nn.Module):
     """
@@ -35,9 +39,9 @@ class EnceladusNetwork(nn.Module):
         conv_output_size_3 = np.int64(((conv_output_size_2 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
 
         self.shared_network = nn.Sequential(
-            nn.Conv2d(1, 1, kernel_size),
-            nn.Conv2d(1, 1, kernel_size),
-            nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(1, 6, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(6, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(12, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
             nn.Flatten(),
             nn.Linear(conv_output_size_3**2, hidden_layer1),
             #nn.Sigmoid(),
@@ -72,7 +76,7 @@ class RoverTraining():
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 1e-3 # originally 1e-3
         self.gamma = 1 - 1e-2 # originally 1 - 1e-2
-        self.epsilon = 1e-4 # originally 1e-6
+        self.epsilon = 1e-5 # originally 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -132,11 +136,16 @@ class RoverTraining():
         self.probabilities = []
         self.rewards = []
 
+start_time_print = time.ctime()
+start_time = time.time()
+
+print('\nModel started running at:', start_time_print, '\n')
+
 env = EnceladusEnvironment()
 print('Hello Icy World')
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(20000) #50000
+total_episode_amount = int(10000) #50000
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -163,7 +172,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in [137]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
+for seed in [27]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
     high_score = -1000
     seed = int(seed)
     seed_number += 1
@@ -194,31 +203,31 @@ for seed in [137]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int)
 
             done = terminated
 
-        if score > high_score:
-            high_score = score
+        #if score > high_score:
+        #    high_score = score
 
-            figure_highscore, axes_highscore = plt.subplots(figsize=(6, 6))
+        #    figure_highscore, axes_highscore = plt.subplots(figsize=(6, 6))
 
-            axes_highscore.imshow(env.surface_grid.transpose(), cmap=env.cmap)
-            axes_highscore.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s')
-            axes_highscore.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')
+        #    axes_highscore.imshow(env.surface_grid.transpose(), cmap=env.cmap)
+        #    axes_highscore.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s')
+        #    axes_highscore.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')
 
-            axes_highscore.grid(False)
-            figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
+        #    axes_highscore.grid(False)
+        #    figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
-            file_path_highscore = 'visuals/highscores/rover_training_highscore.jpg'
-            file_version_highscore = 1
+        #    file_path_highscore = 'visuals/highscores/rover_training_highscore.jpg'
+        #    file_version_highscore = 1
 
-            while os.path.isfile(file_path_highscore) is True:
-                if file_version_highscore == 1:
-                    file_path_highscore = file_path_highscore.split('.')[0] + f'-{file_version_highscore}.jpg'
-                else:
-                    file_path_highscore = file_path_highscore.replace(f'-{file_version_highscore-1}.jpg', f'-{file_version_highscore}.jpg')
-                file_version_highscore += 1
+        #    while os.path.isfile(file_path_highscore) is True:
+        #        if file_version_highscore == 1:
+        #            file_path_highscore = file_path_highscore.split('.')[0] + f'-{file_version_highscore}.jpg'
+        #        else:
+        #            file_path_highscore = file_path_highscore.replace(f'-{file_version_highscore-1}.jpg', f'-{file_version_highscore}.jpg')
+        #        file_version_highscore += 1
 
-            plt.savefig(file_path_highscore, dpi=150)
-            plt.close()
-            #print(file_version_highscore-1, ":", score )
+        #    plt.savefig(file_path_highscore, dpi=150)
+        #    plt.close()
+        #    #print(file_version_highscore-1, ":", score )
     
         rewards_over_episodes.append(wrapped_env.return_queue[-1])
         mission_success_over_episodes.append(mission_success)
@@ -276,6 +285,14 @@ while os.path.isfile(result_file_path) is True:
     result_file_version += 1
 
 plt.savefig(result_file_path)
+
+end_time_print = time.ctime()
+end_time = time.time()
+run_time = end_time - start_time
+
+print('\n \nModel stopped training at:', end_time_print)
+print('Total runtime equals:', round(run_time, 2), 'seconds\n')
+
 plt.show()
 
 #env = EnceladusEnvironment()

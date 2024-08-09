@@ -44,14 +44,14 @@ class EnceladusEnvironment(gym.Env):
 		self.grid_height = 20 # originally 40
 		self.surface_grid = np.zeros((self.grid_width, self.grid_height))
 
-		self.fixed_point_distance = 2 #3 #2 # originally 5
+		self.fixed_point_distance = 3 #2 # originally 5
 
 		self.start_x = self.fixed_point_distance
 		self.start_y = self.grid_height-(self.fixed_point_distance+1)
 		self.end_x = self.grid_width-(self.fixed_point_distance+1)
 		self.end_y = self.fixed_point_distance
 
-		self.ridge_amount = 2 #np.random.randint(6,8) # originally self.ridge_amount = np.random.randint(6,12)
+		self.ridge_amount = 6 #np.random.randint(6,8) # originally self.ridge_amount = np.random.randint(6,12)
 
 		for ridge_i in range(self.ridge_amount):
 			ridge_size_max = np.random.randint(6,12) # originally ridge_size_max = np.random.randint(6,18)
