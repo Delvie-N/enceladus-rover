@@ -13,9 +13,6 @@ from time import sleep
 import os
 import time
 
-# Volgende run wel weer meerdere seeds proberen
-# Daarna als dat ook niet werkt monte carlo of sarsa proberen
-
 class EnceladusNetwork(nn.Module):
     """
     This class contains the setup of the Neural Network required for employing DQN for exploring Enceladus
@@ -41,9 +38,9 @@ class EnceladusNetwork(nn.Module):
         self.shared_network = nn.Sequential(
             nn.Conv2d(1, 6, kernel_size), #nn.Conv2d(1, 1, kernel_size),
             nn.Tanh(),
-            nn.Conv2d(6, 10, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(6, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
             nn.Tanh(),
-            nn.Conv2d(10, 10, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(12, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
             nn.Tanh(),
             nn.Flatten(),
             nn.Linear(conv_output_size_3**2, hidden_layer1),
@@ -77,9 +74,9 @@ class RoverTraining():
     """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
-        self.learning_rate = 1e-3 # originally 1e-3
+        self.learning_rate = 1e-4 # originally 1e-3
         self.gamma = 1 - 1e-2 # originally 1 - 1e-2
-        self.epsilon = 1e-4 # originally 1e-6
+        self.epsilon = 1e-6 # originally 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -148,7 +145,7 @@ env = EnceladusEnvironment()
 print('Hello Icy World')
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(10000) #50000
+total_episode_amount = int(250000) #50000
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -206,31 +203,34 @@ for seed in [27]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int):
 
             done = terminated
 
-        #if score > high_score:
-        #    high_score = score
+            # if not done:
+            #     agent.update()
 
-        #    figure_highscore, axes_highscore = plt.subplots(figsize=(6, 6))
+        if score > high_score:
+           high_score = score
 
-        #    axes_highscore.imshow(env.surface_grid.transpose(), cmap=env.cmap)
-        #    axes_highscore.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s')
-        #    axes_highscore.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')
+           figure_highscore, axes_highscore = plt.subplots(figsize=(6, 6))
 
-        #    axes_highscore.grid(False)
-        #    figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
+           axes_highscore.imshow(env.surface_grid.transpose(), cmap=env.cmap)
+           axes_highscore.scatter(env.start_x, env.start_y, color='springgreen', label='Start', marker='s')
+           axes_highscore.scatter(env.end_x, env.end_y, color='red', label='End', marker='s')
 
-        #    file_path_highscore = 'visuals/highscores/rover_training_highscore.jpg'
-        #    file_version_highscore = 1
+           axes_highscore.grid(False)
+           figure_highscore.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
-        #    while os.path.isfile(file_path_highscore) is True:
-        #        if file_version_highscore == 1:
-        #            file_path_highscore = file_path_highscore.split('.')[0] + f'-{file_version_highscore}.jpg'
-        #        else:
-        #            file_path_highscore = file_path_highscore.replace(f'-{file_version_highscore-1}.jpg', f'-{file_version_highscore}.jpg')
-        #        file_version_highscore += 1
+           file_path_highscore = 'visuals/highscores/rover_training_highscore.jpg'
+           file_version_highscore = 1
 
-        #    plt.savefig(file_path_highscore, dpi=150)
-        #    plt.close()
-        #    #print(file_version_highscore-1, ":", score )
+           while os.path.isfile(file_path_highscore) is True:
+               if file_version_highscore == 1:
+                   file_path_highscore = file_path_highscore.split('.')[0] + f'-{file_version_highscore}.jpg'
+               else:
+                   file_path_highscore = file_path_highscore.replace(f'-{file_version_highscore-1}.jpg', f'-{file_version_highscore}.jpg')
+               file_version_highscore += 1
+
+           plt.savefig(file_path_highscore, dpi=150)
+           plt.close()
+           #print(file_version_highscore-1, ":", score )
     
         rewards_over_episodes.append(wrapped_env.return_queue[-1])
         mission_success_over_episodes.append(mission_success)
@@ -267,7 +267,6 @@ for running_mean_index in range(min_running_mean_index, max_running_mean_index):
 
     running_mean = running_mean_sum/(running_mean_size+1)
     running_means_to_plot.append(running_mean)
-
 
 df1 = pd.DataFrame([rewards_to_plot]).melt()
 df1.rename(columns={'variable': 'episodes', 'value': 'reward'}, inplace=True)
