@@ -9,16 +9,11 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from time import sleep
 import os
 import time
 
 class EnceladusNetwork(nn.Module):
-    """
-    This class contains the setup of the Neural Network required for employing DQN for exploring Enceladus
-    - It is a convolutional neural network with three convolutional layers and two hidden layers
-    - For the activation function using either Sigmoid or Tanh can be used by commenting the relevant lines
-    """
+    """ This class contains the setup of the Neural Network required for employing DQN for exploring Enceladus """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions) -> None:
         super().__init__()
@@ -36,19 +31,17 @@ class EnceladusNetwork(nn.Module):
         conv_output_size_3 = np.int64(((conv_output_size_2 + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1)
 
         self.shared_network = nn.Sequential(
-            nn.Conv2d(1, 6, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(1, 6, kernel_size), # originally nn.Conv2d(1, 1, kernel_size),
             nn.Tanh(),
-            nn.Conv2d(6, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(6, 12, kernel_size), # originally nn.Conv2d(1, 1, kernel_size),
             nn.Tanh(),
-            nn.Conv2d(12, 12, kernel_size), #nn.Conv2d(1, 1, kernel_size),
+            nn.Conv2d(12, 12, kernel_size), # originally nn.Conv2d(1, 1, kernel_size),
             nn.Tanh(),
             nn.Flatten(),
             nn.Linear(conv_output_size_3**2, hidden_layer1),
-            #nn.Sigmoid(),
-            nn.Tanh(),
+            nn.Tanh(), # originally (and alternated with) nn.Sigmoid()
             nn.Linear(hidden_layer1, hidden_layer2),
-            #nn.Sigmoid(),
-            nn.Tanh(),
+            nn.Tanh(), # originally (and alternated with) nn.Sigmoid()
         )
 
         self.policy_mean_network = nn.Sequential(
@@ -68,15 +61,12 @@ class EnceladusNetwork(nn.Module):
         return action_means, action_std
 
 class RoverTraining():
-    """
-    This class contains the implementation of the NN from EnceladusNetwork by taking the observation and action space dimensions to put into the NN and calculate
-    the probabilities for each action and returning the optimal action according to the epsilon-greedy policy
-    """
+    """ This class contains the implementation of the NN from EnceladusNetwork by taking the observation and action space dimensions to put into the NN and calculate the probabilities for each action and returning the optimal action according to the epsilon-greedy policy """
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 1e-4 # originally 1e-3
-        self.gamma = 1 - 1e-2 # originally 1 - 1e-2
-        self.epsilon = 1e-6 # originally 1e-6
+        self.gamma = 1 - 1e-2
+        self.epsilon = 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -85,11 +75,12 @@ class RoverTraining():
         self.optimizer = torch.optim.AdamW(self.network.parameters(), lr=self.learning_rate) # originally torch.optim.SGD(self.network.parameters(), lr=self.learning_rate)
 
     def sample_action(self, observations):
+        """ This function takes the observation space (grid world and rover position) to determine the rover's next action """
+
         state = [observations['position_x'], observations['position_y']]
         state.extend(list(np.ndarray.flatten(observations['world'])))
 
         state = torch.tensor(np.array([state]))
-        # convert the state into a tensor image to allow for convolution block
         tensor_image_input = observations['world']
         tensor_image_input = tensor_image_input.reshape((tensor_image_input.shape[0], tensor_image_input.shape[1], 1))
         tensor_image = torch.from_numpy(tensor_image_input)
@@ -115,6 +106,8 @@ class RoverTraining():
         return action
     
     def update(self):
+        """ This function is used to update the agent/NN after finishing an episode set """
+
         running_gamma = 0
         gammas = []
 
@@ -145,7 +138,7 @@ env = EnceladusEnvironment()
 print('Hello Icy World')
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
-total_episode_amount = int(250000) #50000
+total_episode_amount = int(400000)
 total_seed_amount = int(1)
 
 observations = env.get_observations()
@@ -172,7 +165,7 @@ model = agent.network
 
 seed_number = 0
 
-for seed in [27]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int): #np.arange(1, total_seed_amount+1):
+for seed in np.random.randint(0, 500, size=total_seed_amount, dtype=int): # alternated with np.arange(1, total_seed_amount+1):
     high_score = -1000
     seed = int(seed)
     seed_number += 1
@@ -203,9 +196,6 @@ for seed in [27]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int):
 
             done = terminated
 
-            # if not done:
-            #     agent.update()
-
         if score > high_score:
            high_score = score
 
@@ -230,7 +220,6 @@ for seed in [27]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int):
 
            plt.savefig(file_path_highscore, dpi=150)
            plt.close()
-           #print(file_version_highscore-1, ":", score )
     
         rewards_over_episodes.append(wrapped_env.return_queue[-1])
         mission_success_over_episodes.append(mission_success)
@@ -239,7 +228,6 @@ for seed in [27]: #np.random.randint(0, 500, size=total_seed_amount, dtype=int):
         if episode % 1 == 0:
             average_reward = int(np.mean(wrapped_env.return_queue))
             average_mission_success_over_episodes = np.mean(mission_success_over_episodes)
-            #print(f'seed {seed_number:<6}: {seed:>3} so {seed_number/total_seed_amount:>4.1%} \t | \t {episode :>4} so {episode/total_episode_amount:>4.1%} \t | \t {average_reward :<10} \t | \t average mission success: {average_mission_success_over_episodes:>4.1%}', end='\r')
             print(f'seed {seed_number}: {seed} so {seed_number/total_seed_amount:.1%} | {episode} so {episode/total_episode_amount:>4.1%} | {average_reward} | average mission success: {average_mission_success_over_episodes:.1%} \t', end='\r')
 
     rewards_over_seeds.append(rewards_over_episodes)
@@ -275,8 +263,7 @@ sns.scatterplot(x='episodes', y='reward', data=df1).set(
     title='RoverTraining for EnceladusNetwork')
 plt.plot(running_means_index_to_plot, running_means_to_plot, color='red')
 
-#result_file_path = 'training_results/sigmoid/result_sigmoid_20_10.png'
-result_file_path = 'training_results/tanh/result_tanh_32_16.png'
+result_file_path = 'training_results/tanh/result_tanh_32_16.png' # originally 'training_results/sigmoid/result_sigmoid_20_10.png'
 result_file_version = 1
 
 while os.path.isfile(result_file_path) is True:
@@ -297,7 +284,6 @@ print('Total runtime equals:', round(run_time, 2), 'seconds\n')
 
 plt.show()
 
-#env = EnceladusEnvironment()
 env.reset(seed=seed)
 figure, axes = plt.subplots(figsize=(6, 6))
 

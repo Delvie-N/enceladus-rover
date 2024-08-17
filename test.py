@@ -5,6 +5,8 @@ import os
 import numpy as np
 
 def test_manual():
+    """ This function generates an environment and lets a rover attempt to navigate it based on a purely random policy """
+
     env = EnceladusEnvironment()
 
     figure, axes = plt.subplots(figsize=(6, 6))
@@ -46,3 +48,4 @@ def test_manual():
 
 if __name__ == "__main__":
     test_manual()
+    
