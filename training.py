@@ -65,8 +65,8 @@ class RoverTraining():
 
     def __init__(self, observation_space_dimensions, action_space_dimensions):
         self.learning_rate = 1e-4 # originally 1e-3
-        self.gamma = 1 - 1e-2
-        self.epsilon = 1e-6
+        self.gamma = 1 - 1e-2 # originally 1 - 1e-2
+        self.epsilon = 1e-5 # originally 1e-6
 
         self.probabilities = []
         self.rewards = []
@@ -132,10 +132,11 @@ class RoverTraining():
 start_time_print = time.ctime()
 start_time = time.time()
 
-print('\nModel started running at:', start_time_print, '\n')
+print('\nModel started running at:', start_time_print, '\n') 
 
 env = EnceladusEnvironment()
 print('Hello Icy World')
+print('Sensitivity analysis for epsilon = 1e-5 instead of 1e-6 ')
 wrapped_env = gym.wrappers.RecordEpisodeStatistics(env, 50)
 
 total_episode_amount = int(400000)
